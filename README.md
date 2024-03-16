@@ -15,6 +15,12 @@
 | /livox/imu                | sensor_msgs/msg/Imu             | Gazebo 插件仿真 IMU                  |
 | /cmd_vel            | geometry_msgs/msg/Twist         | 麦克纳姆轮小车运动控制接口                  |
 
+## 三. 串口通讯协议
+串口ttyUSB0，波特率115200。\
+数据包结构：
+|0x45|linear.x|linear.y|
+|----|----|----|
+
 ## 三. 环境配置
 
 当前开发环境为 Ubuntu22.04, ROS2 humble, Gazebo 11.10.0
