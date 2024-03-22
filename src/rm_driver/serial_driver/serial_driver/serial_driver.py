@@ -55,15 +55,21 @@ class Receiver():
             while len(data_pack) < 62:
                 data = self.ser.read()
                 data_pack.append(data)
-            
-            # 导航数据
-            if data_pack[0] == b'\xB1':
 
-                # 16转10，4字节
-                result_16b = ''
-                for data in data_pack[3:7]:
-                    result_16b += hex(int.from_bytes(data, 'big'))[2:].rjust(2, '0')
-                result_10b = int(result_16b, 16)
+            # 校验尾数据
+            if data_pack[62] != b'\x3B' or data_pack[63] != b'\xB3':
+                continue
+
+            # 导航数据
+            if data_pack[0] == b'\xff':
+
+                nav_pack = data_pack[8:40]
+            
+            # 自瞄数据
+            if data_pack[1] == b'\xff':
+                
+                aim_pack = data_pack[44:60]
+            
 
 # 串口通信节点
 class Serial_driver(Node):
