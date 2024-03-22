@@ -67,9 +67,9 @@ def generate_launch_description():
         default_value='',
         description='Choose localization method: slam_toolbox, amcl, icp')
 
-    start_base_control_node = Node(
-        package='base_control',
-        executable='base_control_node',
+    start_serial_driver_node = Node(
+        package='serial_driver',
+        executable='serial_driver_node',
         output='screen'
     )
 
@@ -181,7 +181,7 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_mode_cmd)
     ld.add_action(declare_localization_cmd)
-    ld.add_action(start_base_control_node)
+    ld.add_action(start_serial_driver_node)
     ld.add_action(start_rm_simulation)
     ld.add_action(start_common)
     ld.add_action(pointcloud_downsampling_node)

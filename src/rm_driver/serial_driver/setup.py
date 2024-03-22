@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'base_control'
+package_name = 'serial_driver'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        	"base_control_node=base_control.base_control:main"
+        	"serial_driver_node = serial_driver.serial_driver:main"
         ],
     },
 )
