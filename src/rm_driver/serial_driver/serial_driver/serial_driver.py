@@ -98,9 +98,9 @@ class Serial_driver(Node):
         data_pack = [b'\x1A', b'\xA1', b'\xB1', b'\x00']
         data_pack.append(struct.pack('i', int_x))
         data_pack.append(struct.pack('i', int_y))
-        while len(data_pack) < 58:
+        while len(data_pack) < 56:
             data_pack.append(b'\x00')
-
+        data_pack.append(b'\x1B\xB1')
         self.transmitter.transmit(data_pack)
         # self.get_logger().info(f"x:{msg.linear.x}, y:{msg.linear.y}")
 
