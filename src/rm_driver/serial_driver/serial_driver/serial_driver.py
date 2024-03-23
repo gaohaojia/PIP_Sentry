@@ -48,6 +48,10 @@ class Transmitter():
             time.sleep(0.001)
             data_pack = [b'\x1A', b'\xA1', b'\x00', b'\x00']
 
+            # 判断是否有待发送的数据
+            if self.nav_queue.empty() and self.aim_queue.empty():
+                continue
+
             # 判断是否有导航数据
             if not self.nav_queue.empty():
                 data_pack[2] = b'\xFF'
@@ -57,16 +61,17 @@ class Transmitter():
                     data_pack.append(b'\x00')
                 data_pack.append(crc16(nav_data_pack)) # 添加CRC16校验位
             
+            # 补全空余数据
             while len(data_pack) < 44:
                 data_pack.append(b'\x00')
 
+            # 判断是否有自瞄数据
             if not self.aim_queue.empty():
                 data_pack[3] = b'\xFF'
+
+            # 补全空余数据
             while len(data_pack) < 63:
                 data_pack.append(b'\x00')
-
-            if data_pack[2] == b'\x00' and data_pack[3] == b'\x00':
-                continue
             
             for data in data_pack:
                 self.ser.write(data)
@@ -120,6 +125,7 @@ class Serial_driver(Node):
         # 发送导航数据
         self.nav_pub = self.create_publisher(Int8, "nav_msg", 10)
 
+        # 多进程实现串口同时读写
         self.nav_queue = Queue(maxsize=3)
         self.aim_queue = Queue(maxsize=3)
         
