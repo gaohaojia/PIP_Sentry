@@ -23,7 +23,7 @@ def init_serial() -> serial.Serial:
     print("打开串口")
     return ser
 
-# crc计算
+# CRC计算
 def crc16(data_pack: list[int]) -> bytes:
     crc = 0xFFFF # 初始化CRC校验值为0xFFFF
     for byte in data_pack:
