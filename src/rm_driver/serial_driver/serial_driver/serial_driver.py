@@ -24,7 +24,7 @@ def init_serial() -> serial.Serial:
     return ser
 
 # CRC计算
-def crc16(data_pack: list[int]) -> bytes:
+def crc16(data_pack: list[int]) -> list[bytes]:
     crc = 0xFFFF # 初始化CRC校验值为0xFFFF
     for byte in data_pack:
         crc ^= byte # 将当前数据字节与CRC校验值进行异或运算
@@ -34,7 +34,7 @@ def crc16(data_pack: list[int]) -> bytes:
                 crc ^= 0xA001 # 使用CRC16多项式进行异或运算
             else:
                 crc >>= 1
-    return struct.pack('H', crc)
+    return [bytes([byte]) for byte in struct.pack('H', crc)]
 
 # 串口发送器
 class Transmitter():
@@ -59,7 +59,7 @@ class Transmitter():
                 data_pack.extend(bytes([byte]) for byte in nav_data_pack)
                 while len(data_pack) < 36: # 添加预留空数据
                     data_pack.append(b'\x00')
-                data_pack.append(crc16(nav_data_pack)) # 添加CRC16校验位
+                data_pack.extend(crc16(nav_data_pack)) # 添加CRC16校验位
             
             # 补全空余数据
             while len(data_pack) < 44:
@@ -70,7 +70,7 @@ class Transmitter():
                 data_pack[3] = b'\xFF'
 
             # 补全空余数据
-            while len(data_pack) < 63:
+            while len(data_pack) < 64:
                 data_pack.append(b'\x00')
             
             for data in data_pack:
