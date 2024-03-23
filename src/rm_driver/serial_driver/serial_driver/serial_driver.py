@@ -14,16 +14,12 @@ def init_serial() -> serial.Serial:
     ports_list = list(stl.comports())
     if len(ports_list) == 0:
         # 测试用虚拟串口
-        ports_list.append("/dev/pts/3")
+        ports_list.append("/dev/pts/6")
     
     ser = serial.Serial(
         port=ports_list[0],
         baudrate=115200
     )
-    # ser = serial.Serial(
-    #     port='/dev/pts/3',
-    #     baudrate=115200
-    # )
     print("打开串口")
     return ser
 
