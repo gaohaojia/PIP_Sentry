@@ -143,8 +143,11 @@ class Serial_driver(Node):
         data_pack = [i for i in struct.pack('i', int_x)]
         data_pack.extend([i for i in struct.pack('i', int_y)])
         
+        if self.nav_queue.full():
+            self.get_logger().warn("导航串口通信队列已满")
+            return
         self.nav_queue.put(data_pack)
-        # self.get_logger().info(f"x:{msg.linear.x}, y:{msg.linear.y}")
+        
 
 def main(args=None):
     rclpy.init(args=args)
