@@ -4,6 +4,8 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
+from rm_interfaces.msg import Referee
+
 # 导航类
 class NavToPose():
     def __init__(self) -> None:
@@ -38,6 +40,11 @@ class NavToPose():
 class Decision_tree(Node):
     def __init__(self, name):
         super().__init__(name)
+
+        self.referee_sub = self.create_subscription(Referee, 'referee_data', self.referee_callback, 10)
+
+    def referee_callback(self, msg):
+        self.get_logger().info(f'收到消息:{msg.base_hp}')
 
 
 def main(args=None):

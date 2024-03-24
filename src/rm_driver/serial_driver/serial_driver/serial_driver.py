@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int8
 from geometry_msgs.msg import Twist
+
+from rm_interfaces.msg import Referee
 
 import struct
 import serial
@@ -98,19 +99,15 @@ class Receiver():
                 data = self.ser.read()
                 data_pack.append(data)
 
-            # 校验尾数据
-            if data_pack[62] != b'\x3B' or data_pack[63] != b'\xB3':
-                continue
-
             # 导航数据
             if data_pack[0] == b'\xff':
-
-                nav_pack = data_pack[8:40]
+                nav_pack = data_pack[2:34]
+                msg = Referee()
+                
             
             # 自瞄数据
             if data_pack[1] == b'\xff':
-                
-                aim_pack = data_pack[44:60]
+                aim_pack = data_pack[42:58]
             
 
 # 串口通信节点
@@ -123,7 +120,7 @@ class Serial_driver(Node):
         self.twist_sub = self.create_subscription(Twist, '/cmd_vel', self.vel_callback, 10)
 
         # 发送导航数据
-        self.nav_pub = self.create_publisher(Int8, "nav_msg", 10)
+        self.nav_pub = self.create_publisher(Referee, "referee_data", 10)
 
         # 多进程实现串口同时读写
         self.nav_queue = Queue(maxsize=3)
