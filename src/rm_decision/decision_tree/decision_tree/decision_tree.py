@@ -40,23 +40,9 @@ class Decision_tree(Node):
         super().__init__(name)
 
 
-def main():
-    rclpy.init()
-    
-    # goal_pose.pose.orientation.w = 1.0
-
-    if True:
-    # while True:
-        goal_pose.pose.position.x = 6.0
-        goal_pose.pose.position.y = 0.0
-        go_to_pose(navigator, goal_pose)
-        goal_pose.pose.position.x = 6.0
-        goal_pose.pose.position.y = 2.0
-        go_to_pose(navigator, goal_pose)
-        goal_pose.pose.position.x = 0.0
-        goal_pose.pose.position.y = 2.0
-        go_to_pose(navigator, goal_pose)
-        goal_pose.pose.position.x = 0.0
-        goal_pose.pose.position.y = 0.0
-        go_to_pose(navigator, goal_pose)
-    
+def main(args=None):
+    rclpy.init(args=args)
+    node = Decision_tree("decision_tree")
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
