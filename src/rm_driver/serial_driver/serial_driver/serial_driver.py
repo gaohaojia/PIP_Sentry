@@ -15,7 +15,7 @@ def init_serial() -> serial.Serial:
     ports_list = list(stl.comports())
     if len(ports_list) == 0:
         # 测试用虚拟串口
-        ports_list.append("/dev/pts/6")
+        ports_list.append("/dev/pts/4")
     
     ser = serial.Serial(
         port=ports_list[0],
@@ -80,19 +80,20 @@ class Transmitter():
 
 # 串口接受器
 class Receiver():
-    def __init__(self, ser: serial.Serial, nav_pub) -> None:
+    def __init__(self, ser: serial.Serial, referee_pub) -> None:
         self.ser = ser
-        self.nav_pub = nav_pub
+        self.referee_pub = referee_pub
 
-    def receive(self):
+    def receive(self, node: Node):
         while True:
-            
+            time.sleep(0.001)
             # 判断是否为头文件
+            
             if self.ser.read() != b'\x3A':
                 continue
             if self.ser.read() != b'\xA3':
                 continue
-
+            node.get_logger().info("\n\n\n得到串口数据！\n\n\n")
             # 获取其余所有数据
             data_pack: list[bytes] = []
             while len(data_pack) < 62:
@@ -102,8 +103,18 @@ class Receiver():
             # 导航数据
             if data_pack[0] == b'\xff':
                 nav_pack = data_pack[2:34]
+                sentry_hp = struct.unpack('h', b''.join(nav_pack[0:2]))[0]
+                base_hp = struct.unpack('h', b''.join(nav_pack[2:4]))[0]
+                ammo = struct.unpack('h', b''.join(nav_pack[4:6]))[0]
+                remaining_time = struct.unpack('h', b''.join(nav_pack[6:8]))[0]
+                node.get_logger().info(f'{sentry_hp}, {base_hp}, {ammo}, {remaining_time}')
                 msg = Referee()
-                
+                msg.sentry_hp = sentry_hp
+                msg.base_hp = base_hp
+                msg.ammo = ammo
+                msg.remaining_time = remaining_time
+                node.get_logger().info(f'{msg.ammo}')
+                self.referee_pub.publish(msg)
             
             # 自瞄数据
             if data_pack[1] == b'\xff':
@@ -120,7 +131,7 @@ class Serial_driver(Node):
         self.twist_sub = self.create_subscription(Twist, '/cmd_vel', self.vel_callback, 10)
 
         # 发送导航数据
-        self.nav_pub = self.create_publisher(Referee, "referee_data", 10)
+        self.referee_pub = self.create_publisher(Referee, "/referee_data", 10)
 
         # 多进程实现串口同时读写
         self.nav_queue = Queue(maxsize=3)
@@ -128,9 +139,9 @@ class Serial_driver(Node):
         
         self.ser = init_serial()
         self.transmitter = Transmitter(self.ser, self.nav_queue, self.aim_queue)
-        self.receiver = Receiver(self.ser, self.nav_pub)
+        self.receiver = Receiver(self.ser, self.referee_pub)
 
-        process = [Process(target=self.receiver.receive),
+        process = [Process(target=self.receiver.receive, args=(self, )),
                   Process(target=self.transmitter.transmit)]
         [p.start() for p in process]
 

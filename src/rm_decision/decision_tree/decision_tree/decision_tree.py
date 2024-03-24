@@ -7,7 +7,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from rm_interfaces.msg import Referee
 
 # 导航类
-class NavToPose():
+class Nav2Pose():
     def __init__(self) -> None:
         self.navigator = BasicNavigator()
         self.navigator.waitUntilNav2Active()
@@ -15,6 +15,8 @@ class NavToPose():
         self.goal_pose = PoseStamped()
         self.goal_pose.header.frame_id = 'map'
         self.goal_pose.header.stamp = self.navigator.get_clock().now().to_msg()
+
+        self.navigator.setInitialPose(self.goal_pose)
 
     # 设定导航任务
     def go2pose(self, x: float, y: float):
@@ -41,10 +43,12 @@ class Decision_tree(Node):
     def __init__(self, name):
         super().__init__(name)
 
-        self.referee_sub = self.create_subscription(Referee, 'referee_data', self.referee_callback, 10)
+        self.nav2pose = Nav2Pose()
+
+        self.referee_sub = self.create_subscription(Referee, '/referee_data', self.referee_callback, 10)
 
     def referee_callback(self, msg):
-        self.get_logger().info(f'收到消息:{msg.base_hp}')
+        self.get_logger().info(f'哨兵血量:{msg.sentry_hp}，基地血量:{msg.base_hp}，发弹量:{msg.ammo}，剩余时间:{msg.remaining_time}')
 
 
 def main(args=None):
