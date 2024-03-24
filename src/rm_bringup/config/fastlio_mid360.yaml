@@ -34,7 +34,7 @@
             scan_bodyframe_pub_en: true  # true: output the point cloud scans in IMU-body-frame
 
         # when you use docker, you should enter the absolute path of in docker container
-        map_file_path: "src/rm_bringup/PCD/YOUR_MAP_NAME.pcd"
+        map_file_path: "src/rm_bringup/PCD/test_world.pcd"
         pcd_save:
             pcd_save_en: false
             interval: -1                 # how many LiDAR frames saved in each pcd file;

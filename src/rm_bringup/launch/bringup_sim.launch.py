@@ -73,6 +73,12 @@ def generate_launch_description():
         output='screen'
     )
 
+    start_decision_tree_node = Node(
+        package='decision_tree',
+        executable='decision_tree_node',
+        output='screen'
+    )
+
     # Specify the actions
     start_rm_simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pb_rm_simulation_launch_dir, 'rm_simulation.launch.py')),
@@ -182,6 +188,7 @@ def generate_launch_description():
     ld.add_action(declare_mode_cmd)
     ld.add_action(declare_localization_cmd)
     ld.add_action(start_serial_driver_node)
+    ld.add_action(start_decision_tree_node)
     ld.add_action(start_rm_simulation)
     ld.add_action(start_common)
     ld.add_action(pointcloud_downsampling_node)
