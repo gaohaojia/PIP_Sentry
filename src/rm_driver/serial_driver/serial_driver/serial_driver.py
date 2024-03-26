@@ -15,7 +15,7 @@ def init_serial() -> serial.Serial:
     ports_list = list(stl.comports())
     if len(ports_list) == 0:
         # 测试用虚拟串口
-        ports_list.append("/dev/pts/4")
+        ports_list.append("/dev/pts/16")
     
     ser = serial.Serial(
         port=ports_list[0],
@@ -39,35 +39,36 @@ def crc16(data_pack: list[int]) -> list[bytes]:
 
 # 串口发送器
 class Transmitter():
-    def __init__(self, ser: serial.Serial, nav_queue: Queue, aim_queue: Queue) -> None:
+    def __init__(self, ser: serial.Serial, nav_pack_queue: Queue, aim_pack_queue: Queue) -> None:
         self.ser = ser
-        self.nav_queue: Queue = nav_queue
-        self.aim_queue: Queue = aim_queue
+        self.nav_pack_queue: Queue = nav_pack_queue
+        self.aim_pack_queue: Queue = aim_pack_queue
+        self.last_nav_pack = None
+        self.last_aim_pack = None
 
     def transmit(self):
         while True:
             time.sleep(0.001)
             data_pack = [b'\x1A', b'\xA1', b'\x00', b'\x00']
 
-            # 判断是否有待发送的数据
-            if self.nav_queue.empty() and self.aim_queue.empty():
-                continue
-
             # 判断是否有导航数据
-            if not self.nav_queue.empty():
+            if not self.nav_pack_queue.empty():
+                self.last_nav_pack = self.nav_pack_queue.get() # 获取导航数据
+            if not self.last_nav_pack is None:
                 data_pack[2] = b'\xFF'
-                nav_data_pack = self.nav_queue.get() # 获取导航数据
-                data_pack.extend(bytes([byte]) for byte in nav_data_pack)
+                data_pack.extend(bytes([byte]) for byte in self.last_nav_pack)
                 while len(data_pack) < 36: # 添加预留空数据
                     data_pack.append(b'\x00')
-                data_pack.extend(crc16(nav_data_pack)) # 添加CRC16校验位
+                data_pack.extend(crc16(self.last_nav_pack)) # 添加CRC16校验位
             
             # 补全空余数据
             while len(data_pack) < 44:
                 data_pack.append(b'\x00')
 
             # 判断是否有自瞄数据
-            if not self.aim_queue.empty():
+            if not self.aim_pack_queue.empty():
+                self.last_aim_pack = self.aim_pack_queue
+            if not self.last_aim_pack is None:
                 data_pack[3] = b'\xFF'
 
             # 补全空余数据
@@ -76,49 +77,6 @@ class Transmitter():
             
             for data in data_pack:
                 self.ser.write(data)
-                
-
-# 串口接受器
-class Receiver():
-    def __init__(self, ser: serial.Serial, referee_pub) -> None:
-        self.ser = ser
-        self.referee_pub = referee_pub
-
-    def receive(self, node: Node):
-        while True:
-            time.sleep(0.001)
-            # 判断是否为头文件
-            
-            if self.ser.read() != b'\x3A':
-                continue
-            if self.ser.read() != b'\xA3':
-                continue
-            node.get_logger().info("\n\n\n得到串口数据！\n\n\n")
-            # 获取其余所有数据
-            data_pack: list[bytes] = []
-            while len(data_pack) < 62:
-                data = self.ser.read()
-                data_pack.append(data)
-
-            # 导航数据
-            if data_pack[0] == b'\xff':
-                nav_pack = data_pack[2:34]
-                sentry_hp = struct.unpack('h', b''.join(nav_pack[0:2]))[0]
-                base_hp = struct.unpack('h', b''.join(nav_pack[2:4]))[0]
-                ammo = struct.unpack('h', b''.join(nav_pack[4:6]))[0]
-                remaining_time = struct.unpack('h', b''.join(nav_pack[6:8]))[0]
-                node.get_logger().info(f'{sentry_hp}, {base_hp}, {ammo}, {remaining_time}')
-                msg = Referee()
-                msg.sentry_hp = sentry_hp
-                msg.base_hp = base_hp
-                msg.ammo = ammo
-                msg.remaining_time = remaining_time
-                node.get_logger().info(f'{msg.ammo}')
-                self.referee_pub.publish(msg)
-            
-            # 自瞄数据
-            if data_pack[1] == b'\xff':
-                aim_pack = data_pack[42:58]
             
 
 # 串口通信节点
@@ -139,11 +97,11 @@ class Serial_driver(Node):
         
         self.ser = init_serial()
         self.transmitter = Transmitter(self.ser, self.nav_queue, self.aim_queue)
-        self.receiver = Receiver(self.ser, self.referee_pub)
 
-        process = [Process(target=self.receiver.receive, args=(self, )),
-                  Process(target=self.transmitter.transmit)]
+        process = [Process(target=self.transmitter.transmit)]
         [p.start() for p in process]
+
+        self.receive_timer = self.create_timer(0.005, self.receive_callback)
 
     # 导航数据接收回调
     def vel_callback(self, msg: Twist):
@@ -157,6 +115,33 @@ class Serial_driver(Node):
             self.get_logger().warn("导航串口通信队列已满")
             return
         self.nav_queue.put(data_pack)
+    
+    # 串口接收计时器回调
+    def receive_callback(self):
+        if self.ser.read() != b'\x3A':
+            return
+        if self.ser.read() != b'\xA3':
+            return
+        self.get_logger().info("\n\n\n得到串口数据！\n\n\n")
+        # 获取其余所有数据
+        data_pack: list[bytes] = []
+        while len(data_pack) < 62:
+            data = self.ser.read()
+            data_pack.append(data)
+
+        # 导航数据
+        if data_pack[0] == b'\xff':
+            nav_pack = data_pack[2:34]
+            msg = Referee()
+            msg.sentry_hp = struct.unpack('h', b''.join(nav_pack[0:2]))[0]
+            msg.base_hp = struct.unpack('h', b''.join(nav_pack[2:4]))[0]
+            msg.ammo = struct.unpack('h', b''.join(nav_pack[4:6]))[0]
+            msg.remaining_time = struct.unpack('h', b''.join(nav_pack[6:8]))[0]
+            self.referee_pub.publish(msg)
+            
+        # 自瞄数据
+        if data_pack[1] == b'\xff':
+            aim_pack = data_pack[42:58]
         
 
 def main(args=None):
