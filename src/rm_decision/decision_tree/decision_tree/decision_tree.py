@@ -23,26 +23,6 @@ class Nav2Pose():
         self.goal_pose.pose.position.x = x
         self.goal_pose.pose.position.y = y
         self.navigator.goToPose(self.goal_pose)
-
-    # 导航任务是否结束
-    def is_finished(self) -> bool:
-        # 获取导航状态
-        feedback = self.navigator.getFeedback()
-        
-        # 判断是否导航过
-        if feedback is None:
-            return True
-
-        # 误差小于0.1时结束导航
-        if feedback.distance_remaining < 0.1:
-            self.navigator.cancelTask()
-            return True
-        
-        # 超时结束导航
-        if Duration.from_msg(feedback.navigation_time) > Duration(seconds=0.1):
-            self.navigator.cancelTask()
-            return True
-        return False
     
     # 终止导航任务
     def cancel(self):
@@ -61,8 +41,10 @@ class Decision_tree(Node):
         self.get_logger().info("\n\n\n\n\n\n\n\n加载完成！\n\n\n\n\n\n\n\n")
 
         # 测试计时器
-        self.test_timer = self.create_timer(0.1, self.test_callback)
+        self.test_timer = self.create_timer(3, self.test_callback)
         self.test_para = 1
+
+        self.nav_feedback_timer = self.create_timer(0.001, self.nav_feedback_callback)
 
     # 裁判数据接收回调
     def referee_callback(self, msg):
@@ -70,10 +52,30 @@ class Decision_tree(Node):
 
     # 测试计时器
     def test_callback(self):
-        if not self.nav2pose.is_finished():
-            return
         self.nav2pose.go2pose(-1.0 * self.test_para, 1.0 * self.test_para)
         self.test_para *= -1
+
+    # 持续导航函数
+    def nav_feedback_callback(self):
+        feedback = self.nav2pose.navigator.getFeedback()
+
+        # 判断导航任务是否存在
+        if feedback is None:
+            return
+        
+        # 判断导航任务是否完成
+        if self.nav2pose.navigator.isTaskComplete():
+            return
+
+        # 误差小于0.1时结束导航
+        if feedback.distance_remaining < 0.1:
+            self.nav2pose.navigator.cancelTask()
+            return
+            
+        # 超时结束导航
+        if Duration.from_msg(feedback.navigation_time) > Duration(seconds=1):
+            self.nav2pose.navigator.cancelTask()
+            return
 
 
 def main(args=None):

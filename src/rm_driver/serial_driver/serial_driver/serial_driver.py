@@ -16,7 +16,7 @@ RECEIVE_RATE = 300
 # 初始化串口
 def init_serial() -> serial.Serial:
     ser = serial.Serial(
-        port="/dev/pts/3",
+        port="/dev/pts/4",
         baudrate=115200
     )
     print("打开串口")
