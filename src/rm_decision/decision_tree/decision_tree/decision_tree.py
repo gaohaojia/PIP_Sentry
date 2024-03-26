@@ -45,6 +45,8 @@ class Decision_tree(Node):
 
         self.nav2pose = Nav2Pose()
 
+        self.get_logger().info("\n\n\n\n\n\n\n\n加载完成！\n请等待30秒后再向串口发送数据！\n\n\n\n\n\n\n\n")
+
         self.referee_sub = self.create_subscription(Referee, '/referee_data', self.referee_callback, 10)
 
     def referee_callback(self, msg):

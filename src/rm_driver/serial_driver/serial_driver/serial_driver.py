@@ -6,19 +6,17 @@ from rm_interfaces.msg import Referee
 
 import struct
 import serial
-import serial.tools.list_ports as stl
 from multiprocessing import Process, Queue
 import time
 
+
+TRANSMIT_RATE = 300
+RECEIVE_RATE = 300
+
 # 初始化串口
 def init_serial() -> serial.Serial:
-    ports_list = list(stl.comports())
-    if len(ports_list) == 0:
-        # 测试用虚拟串口
-        ports_list.append("/dev/pts/16")
-    
     ser = serial.Serial(
-        port=ports_list[0],
+        port="/dev/ttyS0",
         baudrate=115200
     )
     print("打开串口")
@@ -48,7 +46,7 @@ class Transmitter():
 
     def transmit(self):
         while True:
-            time.sleep(0.001)
+            time.sleep(1.0 / TRANSMIT_RATE)
             data_pack = [b'\x1A', b'\xA1', b'\x00', b'\x00']
 
             # 判断是否有导航数据
@@ -101,7 +99,7 @@ class Serial_driver(Node):
         process = [Process(target=self.transmitter.transmit)]
         [p.start() for p in process]
 
-        self.receive_timer = self.create_timer(0.005, self.receive_callback)
+        self.receive_timer = self.create_timer(1.0 / RECEIVE_RATE, self.receive_callback)
 
     # 导航数据接收回调
     def vel_callback(self, msg: Twist):
@@ -122,7 +120,7 @@ class Serial_driver(Node):
             return
         if self.ser.read() != b'\xA3':
             return
-        self.get_logger().info("\n\n\n得到串口数据！\n\n\n")
+        
         # 获取其余所有数据
         data_pack: list[bytes] = []
         while len(data_pack) < 62:
