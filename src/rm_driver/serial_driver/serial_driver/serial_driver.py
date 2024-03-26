@@ -94,11 +94,12 @@ class Serial_driver(Node):
         self.aim_queue = Queue(maxsize=3)
         
         self.ser = init_serial()
+        
         self.transmitter = Transmitter(self.ser, self.nav_queue, self.aim_queue)
+        transmit_process = Process(target=self.transmitter.transmit)
+        transmit_process.start()
 
-        process = [Process(target=self.transmitter.transmit)]
-        [p.start() for p in process]
-
+        # 串口接收计时器
         self.receive_timer = self.create_timer(1.0 / RECEIVE_RATE, self.receive_callback)
 
     # 导航数据接收回调
