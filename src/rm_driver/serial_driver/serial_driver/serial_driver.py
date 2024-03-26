@@ -16,7 +16,7 @@ RECEIVE_RATE = 300
 # 初始化串口
 def init_serial() -> serial.Serial:
     ser = serial.Serial(
-        port="/dev/ttyS0",
+        port="/dev/pts/3",
         baudrate=115200
     )
     print("打开串口")
@@ -87,7 +87,7 @@ class Serial_driver(Node):
         self.twist_sub = self.create_subscription(Twist, '/cmd_vel', self.vel_callback, 10)
 
         # 发送导航数据
-        self.referee_pub = self.create_publisher(Referee, "/referee_data", 10)
+        self.referee_pub = self.create_publisher(Referee, "referee_data", 10)
 
         # 多进程实现串口同时读写
         self.nav_queue = Queue(maxsize=3)
@@ -149,3 +149,4 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+

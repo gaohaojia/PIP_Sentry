@@ -93,6 +93,12 @@ def generate_launch_description():
         output='screen'
     )
 
+    start_decision_tree_node = Node(
+        package='decision_tree',
+        executable='decision_tree_node',
+        output='screen'
+    )
+
     # Specify the actions
     start_livox_ros_driver2_node = Node(
         package='livox_ros_driver2',
@@ -112,7 +118,7 @@ def generate_launch_description():
         condition = LaunchConfigurationEquals('mode', 'nav') and LaunchConfigurationEquals('localization', 'icp'),
         package='pointcloud_downsampling',
         executable='pointcloud_downsampling_node',
-        output='screen',
+        # output='screen',
         parameters=[
             pointcloud_downsampling_config_dir,
             {'use_sim_time': use_sim_time }
@@ -148,7 +154,7 @@ def generate_launch_description():
                 condition = LaunchConfigurationEquals('localization', 'icp'),
                 package='icp_localization_ros2',
                 executable='icp_localization',
-                output='screen',
+                # output='screen',
                 parameters=[
                     icp_node_params_dir,
                     {'use_sim_time': use_sim_time,

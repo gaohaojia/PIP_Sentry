@@ -39,7 +39,7 @@ def generate_launch_description():
         package='imu_complementary_filter',
         executable='complementary_filter_node',
         name='complementary_filter_gain_node',
-        output='screen',
+        # output='screen',
         parameters=[
             {'do_bias_estimation': True},
             {'do_adaptive_gain': True},
@@ -67,7 +67,7 @@ def generate_launch_description():
                 {'cube_side_length': cube_side_length_param},
                 {'runtime_pos_log_enable': runtime_pos_log_enable_param}
             ],
-            output='screen'
+            # output='screen'
         ),
 
         Node(
@@ -81,7 +81,7 @@ def generate_launch_description():
     bringup_linefit_ground_segmentation_group = Node(
         package='linefit_ground_segmentation_ros',
         executable='ground_segmentation_node',
-        output='screen',
+        # output='screen',
         parameters=[segmentation_params]
     )
 

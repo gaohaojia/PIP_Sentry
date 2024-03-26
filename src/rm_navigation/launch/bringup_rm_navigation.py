@@ -113,8 +113,8 @@ def generate_launch_description():
             executable='component_container_mt',
             parameters=[configured_params, {'autostart': autostart}],
             arguments=['--ros-args', '--log-level', log_level],
-            remappings=remappings,
-            output='screen'),
+            # output='screen',
+            remappings=remappings),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
