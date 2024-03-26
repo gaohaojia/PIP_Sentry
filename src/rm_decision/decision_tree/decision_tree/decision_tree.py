@@ -49,8 +49,17 @@ class Decision_tree(Node):
 
         self.referee_sub = self.create_subscription(Referee, '/referee_data', self.referee_callback, 10)
 
+        # 测试用计时器
+        self.test_timer = self.create_timer(0.01, self.test_callback)
+
+    # 裁判数据接收回调
     def referee_callback(self, msg):
         self.get_logger().info(f'哨兵血量:{msg.sentry_hp}，基地血量:{msg.base_hp}，发弹量:{msg.ammo}，剩余时间:{msg.remaining_time}')
+
+    # 测试回调
+    def test_callback(self):
+        self.nav2pose.go2pose(1.0, -1.0)
+        self.nav2pose.go2pose(-1.0, 1.0)
 
 
 def main(args=None):
