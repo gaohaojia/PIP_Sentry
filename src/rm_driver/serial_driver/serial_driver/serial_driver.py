@@ -6,7 +6,9 @@ from rm_interfaces.msg import Referee
 
 import struct
 import serial
-from multiprocessing import Process, Queue
+# from multiprocessing import Process, Queue
+from queue import Queue
+import threading
 import time
 
 
@@ -16,7 +18,7 @@ RECEIVE_RATE = 300
 # 初始化串口
 def init_serial() -> serial.Serial:
     ser = serial.Serial(
-        port="/dev/ttyS0",
+        port="/dev/pts/4",
         baudrate=115200
     )
     print("打开串口")
@@ -135,9 +137,12 @@ class Serial_driver(Node):
         # 开启串口多线程
         self.transmitter = Transmitter(self.ser, self.nav_pack_queue, self.aim_pack_queue)
         self.receiver = Receiver(self.ser, self.msg_queue)
-        process = [Process(target=self.transmitter.transmit),
-                   Process(target=self.receiver.receive)]
-        [p.start() for p in process]
+        # process = [Process(target=self.transmitter.transmit),
+        #            Process(target=self.receiver.receive)]
+        # [p.start() for p in process]
+        threads = [threading.Thread(target=self.transmitter.transmit),
+                   threading.Thread(target=self.receiver.receive)]
+        [thread.start() for thread in threads]
 
         # 发布计时器
         self.publisher_timer = self.create_timer(0.001, self.publisher_callback)
