@@ -149,8 +149,8 @@ class Serial_driver(Node):
         data_pack.extend([i for i in struct.pack('i', int_y)])
         
         if self.nav_pack_queue.full():
-            self.get_logger().warn("导航串口通信队列已满")
-            return
+            # self.get_logger().warn("导航串口通信队列已满")
+            self.nav_pack_queue.get()
         self.nav_pack_queue.put(data_pack)
     
     # 串口接收计时器回调
