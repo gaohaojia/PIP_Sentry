@@ -10,7 +10,7 @@ from queue import Queue
 import threading
 import time
 
-
+# 发送和接收频率（Hz）
 TRANSMIT_RATE = 300
 RECEIVE_RATE = 300
 
