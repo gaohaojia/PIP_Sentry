@@ -129,15 +129,17 @@ class Serial_driver(Node):
         self.aim_pack_queue = Queue(maxsize=3)
         self.msg_queue = Queue(maxsize=3)
         
+        # 初始化串口
         self.ser = init_serial()
         
+        # 开启串口多线程
         self.transmitter = Transmitter(self.ser, self.nav_pack_queue, self.aim_pack_queue)
         self.receiver = Receiver(self.ser, self.msg_queue)
         process = [Process(target=self.transmitter.transmit),
                    Process(target=self.receiver.receive)]
         [p.start() for p in process]
 
-        # 串口接收计时器
+        # 发布计时器
         self.publisher_timer = self.create_timer(0.001, self.publisher_callback)
 
     # 导航数据接收回调
@@ -153,7 +155,7 @@ class Serial_driver(Node):
             self.nav_pack_queue.get()
         self.nav_pack_queue.put(data_pack)
     
-    # 串口接收计时器回调
+    # 发布计时器回调
     def publisher_callback(self):
         if self.msg_queue.empty():
             return
