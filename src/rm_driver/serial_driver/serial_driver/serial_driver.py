@@ -35,6 +35,41 @@ def crc16(data_pack: list[int]) -> list[bytes]:
                 crc >>= 1
     return [bytes([byte]) for byte in struct.pack('H', crc)]
 
+class Receiver():
+    def __init__(self, ser: serial.Serial, msg_queue: Queue):
+        self.ser = ser
+        self.msg_queue = msg_queue
+
+    def receive(self):
+        while True:
+            time.sleep(1.0 / RECEIVE_RATE)
+            if self.ser.read() != b'\x3A':
+                continue
+            if self.ser.read() != b'\xA3':
+                continue
+            
+            # 获取其余所有数据
+            data_pack: list[bytes] = []
+            while len(data_pack) < 62:
+                data = self.ser.read()
+                data_pack.append(data)
+
+            # 导航数据
+            if data_pack[0] == b'\xff':
+                nav_pack = data_pack[2:34]
+                msg = Referee()
+                msg.sentry_hp = struct.unpack('h', b''.join(nav_pack[0:2]))[0]
+                msg.base_hp = struct.unpack('h', b''.join(nav_pack[2:4]))[0]
+                msg.ammo = struct.unpack('h', b''.join(nav_pack[4:6]))[0]
+                msg.remaining_time = struct.unpack('h', b''.join(nav_pack[6:8]))[0]
+                if self.msg_queue.full():
+                    self.msg_queue.get()
+                self.msg_queue.put(msg)
+                
+            # 自瞄数据
+            if data_pack[1] == b'\xff':
+                aim_pack = data_pack[42:58]
+
 # 串口发送器
 class Transmitter():
     def __init__(self, ser: serial.Serial, nav_pack_queue: Queue, aim_pack_queue: Queue) -> None:
@@ -90,17 +125,20 @@ class Serial_driver(Node):
         self.referee_pub = self.create_publisher(Referee, "referee_data", 10)
 
         # 多进程实现串口同时读写
-        self.nav_queue = Queue(maxsize=3)
-        self.aim_queue = Queue(maxsize=3)
+        self.nav_pack_queue = Queue(maxsize=3)
+        self.aim_pack_queue = Queue(maxsize=3)
+        self.msg_queue = Queue(maxsize=3)
         
         self.ser = init_serial()
         
-        self.transmitter = Transmitter(self.ser, self.nav_queue, self.aim_queue)
-        transmit_process = Process(target=self.transmitter.transmit)
-        transmit_process.start()
+        self.transmitter = Transmitter(self.ser, self.nav_pack_queue, self.aim_pack_queue)
+        self.receiver = Receiver(self.ser, self.msg_queue)
+        process = [Process(target=self.transmitter.transmit),
+                   Process(target=self.receiver.receive)]
+        [p.start() for p in process]
 
         # 串口接收计时器
-        self.receive_timer = self.create_timer(1.0 / RECEIVE_RATE, self.receive_callback)
+        self.publisher_timer = self.create_timer(0.001, self.publisher_callback)
 
     # 导航数据接收回调
     def vel_callback(self, msg: Twist):
@@ -110,37 +148,18 @@ class Serial_driver(Node):
         data_pack = [i for i in struct.pack('i', int_x)]
         data_pack.extend([i for i in struct.pack('i', int_y)])
         
-        if self.nav_queue.full():
+        if self.nav_pack_queue.full():
             self.get_logger().warn("导航串口通信队列已满")
             return
-        self.nav_queue.put(data_pack)
+        self.nav_pack_queue.put(data_pack)
     
     # 串口接收计时器回调
-    def receive_callback(self):
-        if self.ser.read() != b'\x3A':
+    def publisher_callback(self):
+        if self.msg_queue.empty():
             return
-        if self.ser.read() != b'\xA3':
-            return
+        msg = self.msg_queue.get()
+        self.referee_pub.publish(msg)
         
-        # 获取其余所有数据
-        data_pack: list[bytes] = []
-        while len(data_pack) < 62:
-            data = self.ser.read()
-            data_pack.append(data)
-
-        # 导航数据
-        if data_pack[0] == b'\xff':
-            nav_pack = data_pack[2:34]
-            msg = Referee()
-            msg.sentry_hp = struct.unpack('h', b''.join(nav_pack[0:2]))[0]
-            msg.base_hp = struct.unpack('h', b''.join(nav_pack[2:4]))[0]
-            msg.ammo = struct.unpack('h', b''.join(nav_pack[4:6]))[0]
-            msg.remaining_time = struct.unpack('h', b''.join(nav_pack[6:8]))[0]
-            self.referee_pub.publish(msg)
-            
-        # 自瞄数据
-        if data_pack[1] == b'\xff':
-            aim_pack = data_pack[42:58]
         
 
 def main(args=None):
