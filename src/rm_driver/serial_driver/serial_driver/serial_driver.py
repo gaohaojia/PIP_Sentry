@@ -44,6 +44,8 @@ class Receiver():
     def receive(self):
         while True:
             time.sleep(1.0 / RECEIVE_RATE)
+
+            # 判断头字节
             if self.ser.read() != b'\x3A':
                 continue
             if self.ser.read() != b'\xA3':
