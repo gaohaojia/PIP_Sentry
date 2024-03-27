@@ -211,6 +211,7 @@ def generate_launch_description():
     ld.add_action(declare_localization_cmd)
     ld.add_action(start_livox_ros_driver2_node)
     ld.add_action(start_serial_driver_node)
+    ld.add_action(start_decision_tree_node)
     ld.add_action(start_robot_description)
     ld.add_action(start_common)
     ld.add_action(pointcloud_downsampling_node)
