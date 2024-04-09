@@ -1,0 +1,9 @@
+[submodule "src/rm_drivers"]
+	path = src/rm_drivers
+	url = https://github.com/gaohaojia/PIP_RM_Drivers.git
+[submodule "src/rm_vision"]
+	path = src/rm_vision
+	url = https://github.com/gaohaojia/PIP_RM_Vision.git
+[submodule "src/rm_nav"]
+	path = src/rm_nav
+	url = https://github.com/gaohaojia/PIP_RM_Nav.git
