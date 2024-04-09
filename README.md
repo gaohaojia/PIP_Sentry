@@ -4,6 +4,7 @@
 部署
 ```bash
 git clone --recursive https://github.com/gaohaojia/PIP_Sentry.git
+cd PIP_Sentry
 sudo chmod 777 *.sh
 ./install.sh
 ./build.sh
