@@ -11,3 +11,4 @@ sudo apt install -y ros-humble-libpointmatcher
 sudo apt install -y ros-humble-tf2-geometry-msgs
 sudo apt install -y libboost-all-dev
 sudo apt install -y libgoogle-glog-dev
+sudo apt install -y ros-humble-serial-driver
