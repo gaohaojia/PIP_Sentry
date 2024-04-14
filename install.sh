@@ -12,3 +12,7 @@ sudo apt install -y ros-humble-tf2-geometry-msgs
 sudo apt install -y libboost-all-dev
 sudo apt install -y libgoogle-glog-dev
 sudo apt install -y ros-humble-serial-driver
+sudo apt install -y ros-humble-rmw-cyclonedds-cpp
+
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+source /usr/share/gazebo/setup.sh
